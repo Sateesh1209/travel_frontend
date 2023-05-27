@@ -6,6 +6,7 @@ import UserServices from "../services/UserServices.js";
 
 const router = useRouter();
 const isCreateAccount = ref(false);
+const loginType = ref("admin")
 const snackbar = ref({
   value: false,
   color: "",
@@ -16,16 +17,17 @@ const user = ref({
   lastName: "",
   email: "",
   password: "",
+  isAdmin: false,
 });
 
 onMounted(async () => {
   if (localStorage.getItem("user") !== null) {
-    router.push({ name: "recipes" });
+    router.push({ name: "travelplans" });
   }
 });
 
 function navigateToRecipes() {
-  router.push({ name: "recipes" });
+  router.push({ name: "travelplans" });
 }
 
 async function createAccount() {
@@ -45,6 +47,7 @@ async function createAccount() {
 }
 
 async function login() {
+  user.value.isAdmin = loginType.value == "admin" ? true : false;
   console.log(user.value);
   await UserServices.loginUser(user)
     .then((data) => {
@@ -52,7 +55,7 @@ async function login() {
       snackbar.value.value = true;
       snackbar.value.color = "green";
       snackbar.value.text = "Login successful!";
-      router.push({ name: "recipes" });
+      router.push({ name: "travelplans" });
     })
     .catch((error) => {
       console.log(error);
@@ -78,8 +81,8 @@ function closeSnackBar() {
 <template>
   <v-container>
     <div id="body">
-      <v-card class="rounded-lg elevation-5">
-        <v-card-title class="headline mb-2">Login </v-card-title>
+      <v-card class="rounded-lg mx-auto" max-width="600">
+        <v-card-title class="headline mb-2 text-center">Login</v-card-title>
         <v-card-text>
           <v-text-field
             v-model="user.email"
@@ -92,9 +95,13 @@ function closeSnackBar() {
             label="Password"
             required
           ></v-text-field>
+          <v-radio-group v-model="loginType" inline>
+            <v-radio label="Admin" value="admin"></v-radio>
+            <v-radio label="User" value="user"></v-radio>
+          </v-radio-group>
         </v-card-text>
         <v-card-actions>
-          <v-btn variant="flat" color="secondary" @click="openCreateAccount()"
+          <v-btn v-if="loginType == 'user'" variant="flat" color="secondary" @click="openCreateAccount()"
             >Create Account</v-btn
           >
           <v-spacer></v-spacer>
@@ -103,7 +110,7 @@ function closeSnackBar() {
         </v-card-actions>
       </v-card>
 
-      <v-card class="rounded-lg elevation-5 my-8">
+      <v-card class="rounded-lg mx-auto my-8" max-width="600">
         <v-card-title class="text-center headline">
           <v-btn
             class="ml-2"
@@ -116,9 +123,9 @@ function closeSnackBar() {
         </v-card-title>
       </v-card>
 
-      <v-dialog persistent v-model="isCreateAccount" width="800">
+      <v-dialog persistent v-model="isCreateAccount" width="700">
         <v-card class="rounded-lg elevation-5">
-          <v-card-title class="headline mb-2">Create Account </v-card-title>
+          <v-card-title class="headline mb-2">Create User Account </v-card-title>
           <v-card-text>
             <v-text-field
               v-model="user.firstName"

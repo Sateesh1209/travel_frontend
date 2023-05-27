@@ -9,15 +9,15 @@ const router = createRouter({
       component: () => import("./views/Login.vue"),
     },
     {
-      path: "/recipes",
-      name: "recipes",
-      component: () => import("./views/RecipeList.vue"),
+      path: "/travelplans",
+      name: "travelplans",
+      component: () => import("./views/TravelPlans.vue"),
     },
     {
       path: "/recipe/:id",
-      name: "editRecipe",
+      name: "editTravelPlan",
       props: true,
-      component: () => import("./views/EditRecipe.vue"),
+      component: () => import("./views/EditTravelPlan.vue"),
     },
     {
       path: "/ingredients",
