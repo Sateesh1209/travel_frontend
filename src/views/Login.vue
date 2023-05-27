@@ -17,6 +17,7 @@ const user = ref({
   lastName: "",
   email: "",
   password: "",
+  isAdmin: false,
 });
 
 onMounted(async () => {
@@ -46,6 +47,7 @@ async function createAccount() {
 }
 
 async function login() {
+  user.value.isAdmin = loginType.value == "admin" ? true : false;
   console.log(user.value);
   await UserServices.loginUser(user)
     .then((data) => {
