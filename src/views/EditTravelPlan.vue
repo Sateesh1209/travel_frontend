@@ -1,6 +1,9 @@
 <script setup>
 import { onMounted, ref } from "vue";
 import { useRoute } from "vue-router";
+import addIcon from "../images/add-icon.png";
+import VueDatePicker from "@vuepic/vue-datepicker";
+import "@vuepic/vue-datepicker/dist/main.css";
 import IngredientServices from "../services/IngredientServices.js";
 import RecipeIngredientServices from "../services/RecipeIngredientServices.js";
 import RecipeStepServices from "../services/RecipeStepServices.js";
@@ -8,7 +11,23 @@ import RecipeServices from "../services/RecipeServices.js";
 
 const route = useRoute();
 
+const props = defineProps({
+  viewType: "edit",
+  closePopupEvent: null,
+});
+
 const recipe = ref({});
+const travelPlan = ref({
+  planId: null,
+  fromDate: null,
+  toDate: null,
+  tripName: "",
+  countryName: "",
+  travelDescription: "",
+  isPublished: false,
+});
+const dateRange = ref(null);
+const tripIterations = ref([]);
 const ingredients = ref([]);
 const selectedIngredient = ref({});
 const recipeIngredients = ref([]);
@@ -38,16 +57,16 @@ const newIngredient = ref({
 });
 
 onMounted(async () => {
-  await getRecipe();
-  await getRecipeIngredients();
-  await getIngredients();
-  await getRecipeSteps();
+  // await getRecipe();
+  // await getRecipeIngredients();
+  // await getIngredients();
+  // await getRecipeSteps();
 });
 
 async function getRecipe() {
   await RecipeServices.getRecipe(route.params.id)
     .then((response) => {
-      recipe.value = response.data[0];
+      travelPlan.value = response.data[0];
     })
     .catch((error) => {
       console.log(error);
@@ -55,11 +74,17 @@ async function getRecipe() {
 }
 
 async function updateRecipe() {
-  await RecipeServices.updateRecipe(recipe.value.id, recipe.value)
+  let payload = {
+    userId: JSON.parse(localStorage.getItem("user")).id,
+    ...travelPlan.value,
+    tripIterations: [...tripIterations.value],
+  };
+  console.log(payload, "ggdg");
+  await RecipeServices.addUpdateTravelPlan(payload)
     .then(() => {
       snackbar.value.value = true;
       snackbar.value.color = "green";
-      snackbar.value.text = `${recipe.value.name} updated successfully!`;
+      snackbar.value.text = `${travelPlan.value.tripName} updated successfully!`;
     })
     .catch((error) => {
       console.log(error);
@@ -67,7 +92,7 @@ async function updateRecipe() {
       snackbar.value.color = "error";
       snackbar.value.text = error.response.data.message;
     });
-  await getRecipe();
+  // await getRecipe();
 }
 
 async function getIngredients() {
@@ -95,7 +120,7 @@ async function getRecipeIngredients() {
 
 async function addIngredient() {
   isAddIngredient.value = false;
-  newIngredient.value.recipeId = recipe.value.id;
+  newIngredient.value.recipeId = travelPlan.value.id;
   newIngredient.value.ingredientId = selectedIngredient.value.id;
   delete newIngredient.value.id;
   await RecipeIngredientServices.addRecipeIngredient(newIngredient.value)
@@ -115,7 +140,7 @@ async function addIngredient() {
 
 async function updateIngredient() {
   isEditIngredient.value = false;
-  newIngredient.value.recipeId = recipe.value.id;
+  newIngredient.value.recipeId = travelPlan.value.id;
   newIngredient.value.ingredientId = selectedIngredient.value.id;
   console.log(newIngredient);
 
@@ -178,7 +203,7 @@ async function getRecipeSteps() {
 
 async function addStep() {
   isAddStep.value = false;
-  newStep.value.recipeId = recipe.value.id;
+  newStep.value.recipeId = travelPlan.value.id;
   delete newStep.value.id;
   await RecipeStepServices.addRecipeStep(newStep.value)
     .then((data) => {
@@ -270,6 +295,45 @@ function openEditStep(step) {
   isEditStep.value = true;
 }
 
+const onDateRangeSelect = (modelData) => {
+  dateRange.value = modelData;
+  // do something else with the data
+  let Difference_In_Time = modelData[1].getTime() - modelData[0].getTime();
+  let daysCount = Difference_In_Time / (1000 * 3600 * 24) + 1;
+
+  let tempTrips = [];
+  for (let i = 0; i < daysCount; i++) {
+    console.log(i);
+    tempTrips.push({
+      day: i + 1,
+      location: "",
+      hotelName: "",
+      meals: "",
+      visitPlaces: [],
+      tempPlaceName: "",
+    });
+  }
+  tripIterations.value = tempTrips;
+  travelPlan.value.fromDate = modelData[0];
+  travelPlan.value.toDate = modelData[1];
+};
+
+const addPlaceNameClick = (trip) => {
+  if (trip.tempPlaceName?.length > 0) {
+    trip.visitPlaces?.push(trip.tempPlaceName);
+    trip.tempPlaceName = "";
+  }
+};
+
+const removeTripPlace = (trip, removeItem) => {
+  let tempPlaces = [...trip.visitPlaces];
+  trip.visitPlaces = tempPlaces.filter((e) => e != removeItem);
+};
+
+const closeParentPopup = () => {
+  props.closePopupEvent();
+};
+
 function closeAddIngredient() {
   isAddIngredient.value = false;
 }
@@ -296,53 +360,46 @@ function closeSnackBar() {
     <v-row align="center">
       <v-col cols="10"
         ><v-card-title class="pl-0 text-h4 font-weight-bold"
-          >Edit Recipe
+          >{{ props.viewType == "add" ? "Add" : "Edit" }} Travel Plan
         </v-card-title>
       </v-col>
     </v-row>
     <v-row>
       <v-col>
-        <v-card class="rounded-lg elevation-5">
+        <v-card class="rounded-lg elevation-5 d-flex align-center">
           <v-card-text>
-            <v-row>
+            <v-row align="center">
               <v-col>
+                <VueDatePicker
+                  class="mb-5"
+                  v-model="dateRange"
+                  placeholder="Select date range..."
+                  range
+                  @update:model-value="onDateRangeSelect"
+                  :partial-range="false"
+                  :enable-time-picker="false"
+                ></VueDatePicker>
                 <v-text-field
-                  v-model="recipe.name"
-                  label="Name"
+                  class="w-100"
+                  v-model="travelPlan.tripName"
+                  label="Trip Name"
                   required
                 ></v-text-field>
                 <v-text-field
-                  v-model.number="recipe.servings"
-                  label="Number of Servings"
-                  type="number"
+                  class="w-100"
+                  v-model="travelPlan.countryName"
+                  label="Country Name"
+                  required
                 ></v-text-field>
-                <v-text-field
-                  v-model.number="recipe.time"
-                  label="Time to Make (in minutes)"
-                  type="number"
-                ></v-text-field>
-                <v-switch
-                  v-model="recipe.isPublished"
-                  hide-details
-                  inset
-                  :label="`Publish? ${recipe.isPublished ? 'Yes' : 'No'}`"
-                ></v-switch>
-              </v-col>
-              <v-col>
                 <v-textarea
-                  v-model="recipe.description"
-                  rows="10"
+                  class="w-100"
+                  v-model="travelPlan.travelDescription"
+                  rows="6"
                   label="Description"
                 ></v-textarea>
               </v-col>
             </v-row>
           </v-card-text>
-          <v-card-actions class="pt-0">
-            <v-btn variant="flat" color="primary" @click="updateRecipe()"
-              >Update Recipe</v-btn
-            >
-            <v-spacer></v-spacer>
-          </v-card-actions>
         </v-card>
       </v-col>
     </v-row>
@@ -352,14 +409,113 @@ function closeSnackBar() {
           <v-card-title
             ><v-row align="center">
               <v-col cols="10"
-                ><v-card-title class="headline">Ingredients </v-card-title>
+                ><v-card-title class="headline">Trip Iterations</v-card-title>
               </v-col>
-              <v-col class="d-flex justify-end" cols="2">
+              <v-col cols="12">
+                <v-expansion-panels>
+                  <template v-if="tripIterations.length == 0"
+                    ><span
+                      v-bind:style="{
+                        color: '#707070',
+                        'font-size': '14px',
+                      }"
+                      >Please select trip dates to show trip iterations...</span
+                    ></template
+                  >
+                  <template v-for="(trip, index) in tripIterations">
+                    <v-expansion-panel>
+                      <v-expansion-panel-title v-slot="{ open }">
+                        <v-row no-gutters>
+                          <v-col cols="4" class="d-flex justify-start">
+                            Day {{ index + 1 }}
+                          </v-col>
+                          <v-col cols="8" class="text--secondary">
+                            <v-fade-transition leave-absolute>
+                              <span v-if="open" key="0">
+                                Enter trip details
+                              </span>
+                              <span v-else key="1">
+                                {{ trip.location }}
+                              </span>
+                            </v-fade-transition>
+                          </v-col>
+                        </v-row>
+                      </v-expansion-panel-title>
+
+                      <v-expansion-panel-text class="pl-15 pr-15">
+                        <v-text-field
+                          v-model="trip.location"
+                          label="Location"
+                          required
+                        ></v-text-field>
+                        <v-text-field
+                          v-model="trip.hotelName"
+                          label="Hotel Name"
+                          required
+                        ></v-text-field>
+                        <v-text-field
+                          v-model="trip.meals"
+                          label="Food Special"
+                          required
+                        ></v-text-field>
+                        <p class="font-italic text-left">
+                          Places Covered:
+                          <template v-if="trip.visitPlaces.length == 0"
+                            ><span
+                              v-bind:style="{
+                                color: '#707070',
+                                'font-size': '14px',
+                              }"
+                              >Please enter place name below and click on add to
+                              list them..</span
+                            ></template
+                          >
+                          <template
+                            v-for="(place, pIndex) in trip.visitPlaces"
+                            :key="{ pIndex }"
+                          >
+                            <v-chip
+                              class="ma-2"
+                              closable
+                              @click:close="removeTripPlace(trip, place)"
+                            >
+                              {{ place }}
+                            </v-chip>
+                          </template>
+                        </p>
+                        <v-row no-gutters>
+                          <v-col cols="4" class="d-flex justify-start">
+                            <v-responsive max-width="350">
+                              <v-text-field
+                                v-model="trip.tempPlaceName"
+                                v-on:keyup.enter="addPlaceNameClick(trip)"
+                                label="Enter place name.."
+                                clearable
+                              ></v-text-field>
+                            </v-responsive>
+                          </v-col>
+                          <v-col cols="1" class="d-flex mt-3"
+                            ><div @click="addPlaceNameClick(trip)">
+                              <v-img
+                                class="mx-2"
+                                :src="addIcon"
+                                height="30"
+                                width="30"
+                                v-bind:style="{ cursor: 'pointer' }"
+                                contain
+                              ></v-img></div></v-col
+                        ></v-row>
+                      </v-expansion-panel-text>
+                    </v-expansion-panel>
+                  </template>
+                </v-expansion-panels>
+              </v-col>
+              <!-- <v-col class="d-flex justify-end" cols="2">
                 <v-btn color="accent" @click="openAddIngredient()">Add</v-btn>
-              </v-col>
+              </v-col> -->
             </v-row>
           </v-card-title>
-          <v-card-text>
+          <!-- <v-card-text>
             <v-list>
               <v-list-item
                 v-for="recipeIngredient in recipeIngredients"
@@ -394,11 +550,46 @@ function closeSnackBar() {
                 </template>
               </v-list-item>
             </v-list>
-          </v-card-text>
+          </v-card-text> -->
         </v-card>
       </v-col>
     </v-row>
     <v-row>
+      <v-col class="d-flex justify-space-between">
+        <v-switch
+          v-model="travelPlan.isPublished"
+          hide-details
+          inset
+          :label="`Publish? ${travelPlan.isPublished ? 'Yes' : 'No'}`"
+        ></v-switch>
+        <!-- </v-col>
+      <v-col class="d-flex justify-space-between"> -->
+        <!-- <v-card-actions class="pt-0"> -->
+        <div>
+          <v-btn
+            v-if="props.viewType == 'add'"
+            class="mr-3"
+            variant="flat"
+            color="secondary"
+            @click="closeParentPopup()"
+            >Cancel</v-btn
+          >
+          <v-btn
+            v-if="props.viewType == 'add'"
+            variant="flat"
+            color="primary"
+            @click="updateRecipe()"
+            >Add Plan</v-btn
+          >
+          <v-btn v-else variant="flat" color="primary" @click="updateRecipe()"
+            >Update Plan</v-btn
+          >
+        </div>
+        <!-- <v-spacer></v-spacer> -->
+        <!-- </v-card-actions> -->
+      </v-col>
+    </v-row>
+    <!-- <v-row>
       <v-col>
         <v-card class="rounded-lg elevation-5">
           <v-card-title
@@ -446,9 +637,9 @@ function closeSnackBar() {
             </v-table>
           </v-card-text> </v-card
       ></v-col>
-    </v-row>
+    </v-row> -->
 
-    <v-dialog
+    <!-- <v-dialog
       persistent
       :model-value="isAddIngredient || isEditIngredient"
       width="800"
@@ -531,9 +722,9 @@ function closeSnackBar() {
           >
         </v-card-actions>
       </v-card>
-    </v-dialog>
+    </v-dialog> -->
 
-    <v-dialog persistent :model-value="isAddStep || isEditStep" width="800">
+    <!-- <v-dialog persistent :model-value="isAddStep || isEditStep" width="800">
       <v-card class="rounded-lg elevation-5">
         <v-card-title class="headline mb-2">
           {{ isAddStep ? "Add Step" : isEditStep ? "Edit Step" : "" }}
@@ -584,7 +775,7 @@ function closeSnackBar() {
           >
         </v-card-actions>
       </v-card>
-    </v-dialog>
+    </v-dialog> -->
     <v-snackbar v-model="snackbar.value" rounded="pill">
       {{ snackbar.text }}
 

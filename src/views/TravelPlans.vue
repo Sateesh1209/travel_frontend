@@ -1,12 +1,24 @@
 <script setup>
 import { onMounted } from "vue";
 import { ref } from "vue";
+import VueDatePicker from "@vuepic/vue-datepicker";
+import "@vuepic/vue-datepicker/dist/main.css";
 import RecipeCard from "../components/RecipeCardComponent.vue";
 import RecipeServices from "../services/RecipeServices.js";
+import EditTravelPlan from "./EditTravelPlan.vue";
 
-const recipes = ref([]);
+const travelPlans = ref([]);
+const dateRange = ref(null);
 const isAdd = ref(false);
-const user = ref(null);
+const isAdmin = ref(false);
+const user = ref({
+  email: "",
+  firstName: "",
+  lastName: "",
+  id: null,
+  token: "",
+  isAdmin: false,
+});
 const snackbar = ref({
   value: false,
   color: "",
@@ -21,16 +33,17 @@ const newRecipe = ref({
 });
 
 onMounted(async () => {
-  await getRecipes();
   user.value = JSON.parse(localStorage.getItem("user"));
+  isAdmin.value = user.value?.isAdmin;
+  await getRecipes();
 });
 
 async function getRecipes() {
-  user.value = JSON.parse(localStorage.getItem("user"));
-  if (user.value !== null && user.value.id !== null) {
+  // user.value = JSON.parse(localStorage.getItem("user"));
+  if (user.value !== null && user.value.id !== null && isAdmin.value) {
     await RecipeServices.getRecipesByUserId(user.value.id)
       .then((response) => {
-        recipes.value = response.data;
+        travelPlans.value = response.data;
       })
       .catch((error) => {
         console.log(error);
@@ -41,7 +54,7 @@ async function getRecipes() {
   } else {
     await RecipeServices.getRecipes()
       .then((response) => {
-        recipes.value = response.data;
+        travelPlans.value = response.data;
       })
       .catch((error) => {
         console.log(error);
@@ -89,27 +102,44 @@ function closeSnackBar() {
       <v-row align="center" class="mb-4">
         <v-col cols="10"
           ><v-card-title class="pl-0 text-h4 font-weight-bold"
-            >Recipes
+            >Travel Plans
           </v-card-title>
         </v-col>
         <v-col class="d-flex justify-end" cols="2">
-          <v-btn v-if="user !== null" color="accent" @click="openAdd()"
-            >Add</v-btn
-          >
+          <template v-if="isAdmin">
+            <v-btn color="accent" @click="openAdd()">Add</v-btn>
+          </template>
         </v-col>
       </v-row>
+      <template v-if="travelPlans?.length > 0">
+        <RecipeCard
+          v-for="tPlan in travelPlans"
+          :key="tPlan.id"
+          :tPlan="tPlan"
+          :isAdmin="isAdmin"
+          @deletedList="getLists()"
+        />
+      </template>
+      <template v-else>
+        <p class="font-italic text-center">No travel plans found...</p>
+      </template>
 
-      <RecipeCard
-        v-for="recipe in recipes"
-        :key="recipe.id"
-        :recipe="recipe"
-        @deletedList="getLists()"
-      />
-
-      <v-dialog persistent v-model="isAdd" width="800">
+      <v-dialog persistent v-model="isAdd" width="1080">
         <v-card class="rounded-lg elevation-5">
-          <v-card-title class="headline mb-2">Add Recipe </v-card-title>
+          <EditTravelPlan
+            :viewType="`add`"
+            :closePopupEvent="closeAdd"
+          ></EditTravelPlan>
+          <!-- <v-card-title class="headline mb-2">Add Travel Plan</v-card-title>
           <v-card-text>
+            <VueDatePicker
+              class="mb-5"
+              v-model="dateRange"
+              placeholder="Select date range..."
+              range
+              :partial-range="false"
+              :enable-time-picker="false"
+            ></VueDatePicker>
             <v-text-field
               v-model="newRecipe.name"
               label="Name"
@@ -146,7 +176,7 @@ function closeSnackBar() {
             <v-btn variant="flat" color="primary" @click="addRecipe()"
               >Add Recipe</v-btn
             >
-          </v-card-actions>
+          </v-card-actions> -->
         </v-card>
       </v-dialog>
       <v-snackbar v-model="snackbar.value" rounded="pill">
