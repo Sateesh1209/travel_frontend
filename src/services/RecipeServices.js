@@ -2,21 +2,21 @@ import apiClient from "./services";
 
 export default {
   getRecipes() {
-    return apiClient.get("recipes");
+    return apiClient.get("tripPlan");
   },
-  getRecipesByUserId(userId) {
-    return apiClient.get("recipes/user/" + userId);
+  getTravelPlansByUserId(userId) {
+    return apiClient.get("tripPlan/user/" + userId);
   },
-  getRecipe(id) {
-    return apiClient.get("recipes/" + id);
+  getTravelPlanByPlanId(id) {
+    return apiClient.get("tripPlan/" + id);
   },
-  addRecipe(recipe) {
-    return apiClient.post("recipes", recipe);
+  addTravelPlan(plan) {
+    return apiClient.post("tripPlan", plan);
   },
-  updateRecipe(recipeId, recipe) {
-    return apiClient.put("recipes/" + recipeId, recipe);
+  updateTravelPlan(planId, plan) {
+    return apiClient.put("tripPlan/" + planId, plan);
   },
-  deleteRecipe(recipeId) {
-    return apiClient.delete("recipes/" + recipeId);
+  deleteTravelPlan(planId) {
+    return apiClient.delete("tripPlan/" + planId);
   },
 };

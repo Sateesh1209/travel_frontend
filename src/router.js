@@ -14,12 +14,6 @@ const router = createRouter({
       component: () => import("./views/TravelPlans.vue"),
     },
     {
-      path: "/recipe/:id",
-      name: "editTravelPlan",
-      props: true,
-      component: () => import("./views/EditTravelPlan.vue"),
-    },
-    {
       path: "/ingredients",
       name: "ingredients",
       component: () => import("./views/IngredientList.vue"),
