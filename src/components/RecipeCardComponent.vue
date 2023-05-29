@@ -3,12 +3,14 @@ import { onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import RecipeStepServices from "../services/RecipeStepServices";
 import RecipeServices from "../services/RecipeServices";
+import UserJoinTrip from "./UserJoinTrip.vue";
 
 const router = useRouter();
 
 const showDetails = ref(false);
 const recipeSteps = ref([]);
 const user = ref(null);
+const isJoinTrip = ref(false);
 
 const props = defineProps({
   tPlan: {
@@ -53,6 +55,14 @@ function getFormattedDate(date) {
 
   return month + "/" + day + "/" + year;
 }
+
+const closeJoinTrip = () => {
+  isJoinTrip.value = false;
+};
+
+const joinTripOpen = () => {
+  isJoinTrip.value = true;
+};
 </script>
 
 <template>
@@ -88,6 +98,10 @@ function getFormattedDate(date) {
               Pending
             </v-chip>
           </span>
+          <v-chip class="ma-2" color="purple-darken-2" label>
+            <v-icon start icon="mdi-account"></v-icon>
+            Max allowed travellers : {{ tPlan.capacity }}
+          </v-chip>
         </v-col>
         <v-col class="d-flex justify-end">
           <template v-if="user !== null && props.isAdmin">
@@ -106,7 +120,9 @@ function getFormattedDate(date) {
             ></v-icon>
           </template>
           <template v-else-if="user !== null && !props.isAdmin">
-            <v-btn variant="flat" color="primary">Join Trip</v-btn>
+            <v-btn variant="flat" color="primary" @click="joinTripOpen()"
+              >Join Trip</v-btn
+            >
           </template>
         </v-col>
       </v-row>
@@ -149,4 +165,13 @@ function getFormattedDate(date) {
       </v-card-text>
     </v-expand-transition>
   </v-card>
+  <v-dialog persistent v-model="isJoinTrip" width="1080">
+    <v-card class="rounded-lg elevation-5">
+      <UserJoinTrip
+        :planDetails="tPlan"
+        :closeJoinTrip="closeJoinTrip"
+        :showSnackbar="showSnackbar"
+      ></UserJoinTrip>
+    </v-card>
+  </v-dialog>
 </template>
