@@ -474,7 +474,7 @@ function closeSnackBar() {
                       <v-expansion-panel-title v-slot="{ open }">
                         <v-row no-gutters>
                           <v-col cols="4" class="d-flex justify-start">
-                            Day {{ index + 1 }}
+                            Day {{ trip.day }}
                           </v-col>
                           <v-col cols="8" class="text--secondary">
                             <v-fade-transition leave-absolute>
