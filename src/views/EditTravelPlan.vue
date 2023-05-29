@@ -12,8 +12,11 @@ import RecipeServices from "../services/RecipeServices.js";
 const route = useRoute();
 
 const props = defineProps({
-  viewType: "edit",
-  closePopupEvent: null,
+  viewType: String,
+  planEditId: null,
+  getUpdatedTrips: Function,
+  closePopupEvent: Function,
+  showSnackbar: Function,
 });
 
 const recipe = ref({});
@@ -23,6 +26,7 @@ const travelPlan = ref({
   toDate: null,
   tripName: "",
   countryName: "",
+  capacity: 3,
   travelDescription: "",
   isPublished: false,
 });
@@ -57,16 +61,40 @@ const newIngredient = ref({
 });
 
 onMounted(async () => {
-  // await getRecipe();
+  if (props.planEditId != null && props.viewType == "edit") {
+    await getRecipe();
+  }
   // await getRecipeIngredients();
   // await getIngredients();
   // await getRecipeSteps();
 });
 
 async function getRecipe() {
-  await RecipeServices.getRecipe(route.params.id)
+  await RecipeServices.getTravelPlanByPlanId(props.planEditId)
     .then((response) => {
-      travelPlan.value = response.data[0];
+      let tempPlan = {
+        planId: null,
+        fromDate: new Date(response.data[0].fromDate),
+        toDate: new Date(response.data[0].toDate),
+        tripName: response.data[0].name,
+        countryName: response.data[0].countryName,
+        capacity: response.data[0].capacity,
+        travelDescription: response.data[0].description,
+        isPublished: response.data[0].isPublished,
+      };
+      dateRange.value = [
+        new Date(response.data[0].fromDate),
+        new Date(response.data[0].toDate),
+      ];
+      travelPlan.value = tempPlan;
+      if (response.data[0].recipeStep?.length > 0) {
+        response.data[0].recipeStep?.map((item) => {
+          item.visitPlaces = item?.visitPlaces
+            ? item?.visitPlaces?.split(",")
+            : [];
+        });
+      }
+      tripIterations.value = response.data[0].recipeStep;
     })
     .catch((error) => {
       console.log(error);
@@ -79,20 +107,32 @@ async function updateRecipe() {
     ...travelPlan.value,
     tripIterations: [...tripIterations.value],
   };
-  console.log(payload, "ggdg");
-  await RecipeServices.addUpdateTravelPlan(payload)
-    .then(() => {
-      snackbar.value.value = true;
-      snackbar.value.color = "green";
-      snackbar.value.text = `${travelPlan.value.tripName} updated successfully!`;
-    })
-    .catch((error) => {
-      console.log(error);
-      snackbar.value.value = true;
-      snackbar.value.color = "error";
-      snackbar.value.text = error.response.data.message;
-    });
-  // await getRecipe();
+  if (props.viewType == "edit") {
+    await RecipeServices.updateTravelPlan(props.planEditId, payload)
+      .then((response) => {
+        props.showSnackbar("green", response.data.msg);
+        if (response.data.status == "success") {
+          props.getUpdatedTrips();
+          // route.push({ name: "travelplans" });
+        }
+      })
+      .catch((error) => {
+        console.log(error);
+        props.showSnackbar("error", error.message);
+      });
+  } else {
+    await RecipeServices.addTravelPlan(payload)
+      .then((response) => {
+        props.showSnackbar("green", response.data.msg);
+        if (response.data.status == "success") {
+          props.getUpdatedTrips();
+        }
+      })
+      .catch((error) => {
+        console.log(error);
+        props.showSnackbar("error", error.message);
+      });
+  }
 }
 
 async function getIngredients() {
@@ -109,7 +149,7 @@ async function getIngredients() {
 }
 
 async function getRecipeIngredients() {
-  await RecipeIngredientServices.getRecipeIngredientsForRecipe(route.params.id)
+  await RecipeIngredientServices.getRecipeIngredientsForRecipe(props.planEditId)
     .then((response) => {
       recipeIngredients.value = response.data;
     })
@@ -191,7 +231,7 @@ async function checkUpdateIngredient() {
 
 async function getRecipeSteps() {
   await RecipeStepServices.getRecipeStepsForRecipeWithIngredients(
-    route.params.id
+    props.planEditId
   )
     .then((response) => {
       recipeSteps.value = response.data;
@@ -303,8 +343,8 @@ const onDateRangeSelect = (modelData) => {
 
   let tempTrips = [];
   for (let i = 0; i < daysCount; i++) {
-    console.log(i);
     tempTrips.push({
+      id: null,
       day: i + 1,
       location: "",
       hotelName: "",
@@ -389,6 +429,13 @@ function closeSnackBar() {
                   class="w-100"
                   v-model="travelPlan.countryName"
                   label="Country Name"
+                  required
+                ></v-text-field>
+                <v-text-field
+                  class="w-100"
+                  v-model.number="travelPlan.capacity"
+                  label="Max allowed travellers"
+                  type="number"
                   required
                 ></v-text-field>
                 <v-textarea
@@ -567,7 +614,6 @@ function closeSnackBar() {
         <!-- <v-card-actions class="pt-0"> -->
         <div>
           <v-btn
-            v-if="props.viewType == 'add'"
             class="mr-3"
             variant="flat"
             color="secondary"

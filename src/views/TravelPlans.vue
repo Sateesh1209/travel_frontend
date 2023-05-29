@@ -8,7 +8,8 @@ import RecipeServices from "../services/RecipeServices.js";
 import EditTravelPlan from "./EditTravelPlan.vue";
 
 const travelPlans = ref([]);
-const dateRange = ref(null);
+const viewType = ref("add");
+const planEditId = ref(null);
 const isAdd = ref(false);
 const isAdmin = ref(false);
 const user = ref({
@@ -39,9 +40,11 @@ onMounted(async () => {
 });
 
 async function getRecipes() {
+  isAdd.value = false;
+  planEditId.value = null;
   // user.value = JSON.parse(localStorage.getItem("user"));
   if (user.value !== null && user.value.id !== null && isAdmin.value) {
-    await RecipeServices.getRecipesByUserId(user.value.id)
+    await RecipeServices.getTravelPlansByUserId(user.value.id)
       .then((response) => {
         travelPlans.value = response.data;
       })
@@ -65,35 +68,31 @@ async function getRecipes() {
   }
 }
 
-async function addRecipe() {
-  isAdd.value = false;
-  newRecipe.value.userId = user.value.id;
-  await RecipeServices.addRecipe(newRecipe.value)
-    .then(() => {
-      snackbar.value.value = true;
-      snackbar.value.color = "green";
-      snackbar.value.text = `${newRecipe.value.name} added successfully!`;
-    })
-    .catch((error) => {
-      console.log(error);
-      snackbar.value.value = true;
-      snackbar.value.color = "error";
-      snackbar.value.text = error.response.data.message;
-    });
-  await getRecipes();
-}
-
 function openAdd() {
+  viewType.value = "add";
   isAdd.value = true;
 }
 
 function closeAdd() {
   isAdd.value = false;
+  planEditId.value = null;
 }
 
 function closeSnackBar() {
   snackbar.value.value = false;
 }
+
+const showSnackbar = (color, msg) => {
+  snackbar.value.value = true;
+  snackbar.value.color = color;
+  snackbar.value.text = msg;
+};
+
+const openEditPopup = (id) => {
+  viewType.value = "edit";
+  planEditId.value = id;
+  isAdd.value = true;
+};
 </script>
 
 <template>
@@ -117,6 +116,9 @@ function closeSnackBar() {
           :key="tPlan.id"
           :tPlan="tPlan"
           :isAdmin="isAdmin"
+          :openEditPopup="openEditPopup"
+          :getUpdatedTrips="getRecipes"
+          :showSnackbar="showSnackbar"
           @deletedList="getLists()"
         />
       </template>
@@ -127,56 +129,12 @@ function closeSnackBar() {
       <v-dialog persistent v-model="isAdd" width="1080">
         <v-card class="rounded-lg elevation-5">
           <EditTravelPlan
-            :viewType="`add`"
+            :viewType="viewType"
+            :planEditId="planEditId"
+            :getUpdatedTrips="getRecipes"
             :closePopupEvent="closeAdd"
+            :showSnackbar="showSnackbar"
           ></EditTravelPlan>
-          <!-- <v-card-title class="headline mb-2">Add Travel Plan</v-card-title>
-          <v-card-text>
-            <VueDatePicker
-              class="mb-5"
-              v-model="dateRange"
-              placeholder="Select date range..."
-              range
-              :partial-range="false"
-              :enable-time-picker="false"
-            ></VueDatePicker>
-            <v-text-field
-              v-model="newRecipe.name"
-              label="Name"
-              required
-            ></v-text-field>
-
-            <v-text-field
-              v-model.number="newRecipe.servings"
-              label="Number of Servings"
-              type="number"
-            ></v-text-field>
-            <v-text-field
-              v-model.number="newRecipe.time"
-              label="Time to Make (in minutes)"
-              type="number"
-            ></v-text-field>
-
-            <v-textarea
-              v-model="newRecipe.description"
-              label="Description"
-            ></v-textarea>
-            <v-switch
-              v-model="newRecipe.isPublished"
-              hide-details
-              inset
-              :label="`Publish? ${newRecipe.isPublished ? 'Yes' : 'No'}`"
-            ></v-switch>
-          </v-card-text>
-          <v-card-actions>
-            <v-spacer></v-spacer>
-            <v-btn variant="flat" color="secondary" @click="closeAdd()"
-              >Close</v-btn
-            >
-            <v-btn variant="flat" color="primary" @click="addRecipe()"
-              >Add Recipe</v-btn
-            >
-          </v-card-actions> -->
         </v-card>
       </v-dialog>
       <v-snackbar v-model="snackbar.value" rounded="pill">

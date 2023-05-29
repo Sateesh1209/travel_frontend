@@ -1,13 +1,12 @@
 <script setup>
 import { onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
-import RecipeIngredientServices from "../services/RecipeIngredientServices.js";
 import RecipeStepServices from "../services/RecipeStepServices";
+import RecipeServices from "../services/RecipeServices";
 
 const router = useRouter();
 
 const showDetails = ref(false);
-const recipeIngredients = ref([]);
 const recipeSteps = ref([]);
 const user = ref(null);
 
@@ -16,38 +15,31 @@ const props = defineProps({
     required: true,
   },
   isAdmin: false,
+  openEditPopup: Function,
+  getUpdatedTrips: Function,
+  showSnackbar: Function,
 });
 
 onMounted(async () => {
-  // await getRecipeIngredients();
-  // await getRecipeSteps();
   user.value = JSON.parse(localStorage.getItem("user"));
 });
 
-async function getRecipeIngredients() {
-  await RecipeIngredientServices.getRecipeIngredientsForRecipe(props.tPlan.id)
+async function deleteTrip() {
+  await RecipeServices.deleteTravelPlan(props.tPlan.id)
     .then((response) => {
-      recipeIngredients.value = response.data;
+      props.showSnackbar("green", response.data.msg);
+      if (response.data.status == "success") {
+        props.getUpdatedTrips();
+      }
     })
     .catch((error) => {
       console.log(error);
-    });
-}
-
-async function getRecipeSteps() {
-  await RecipeStepServices.getRecipeStepsForRecipeWithIngredients(
-    props.tPlan.id
-  )
-    .then((response) => {
-      recipeSteps.value = response.data;
-    })
-    .catch((error) => {
-      console.log(error);
+      props.showSnackbar("error", error.message);
     });
 }
 
 function navigateToEdit() {
-  router.push({ name: "editTravelPlan", params: { id: props.tPlan.id } });
+  props.openEditPopup(props.tPlan.id);
 }
 
 function getFormattedDate(date) {
@@ -71,7 +63,8 @@ function getFormattedDate(date) {
     <v-card-title class="headline">
       <v-row align="center">
         <v-col cols="10">
-          {{ tPlan.name }} to {{ tPlan.countryName }}
+          {{ tPlan.name }} <v-icon start icon="mdi-airplane-takeoff"></v-icon>
+          {{ tPlan.countryName }}
           <v-chip class="ma-2" color="primary" label>
             <!-- <v-icon start icon="mdi-account-circle-outline"></v-icon> -->
             {{ getFormattedDate(tPlan.fromDate) }} - </v-chip
@@ -97,6 +90,14 @@ function getFormattedDate(date) {
           </span>
         </v-col>
         <v-col class="d-flex justify-end">
+          <template v-if="user !== null && props.isAdmin">
+            <v-icon
+              class="mr-3"
+              size="small"
+              icon="mdi-delete"
+              @click="deleteTrip()"
+            ></v-icon>
+          </template>
           <template v-if="user !== null && props.isAdmin">
             <v-icon
               size="small"
@@ -131,14 +132,16 @@ function getFormattedDate(date) {
               <td>{{ day.location }}</td>
               <td>{{ day.meals }}</td>
               <td>
-                <v-chip size="small" pill>{{ day.visitPlaces }}</v-chip>
-                <!-- <v-chip
+                <!-- <v-chip size="small" pill>{{ day.visitPlaces }}</v-chip> -->
+                <v-chip
+                  v-if="day?.visitPlaces"
                   size="small"
-                  v-for="ingredient in step.recipeIngredient"
-                  :key="ingredient.id"
+                  class="mr-1"
+                  v-for="place in day?.visitPlaces?.split(',')"
                   pill
-                  >{{ ingredient.ingredient.name }}</v-chip
-                > -->
+                  >{{ place }}</v-chip
+                >
+                <span v-else> - </span>
               </td>
             </tr>
           </tbody>
