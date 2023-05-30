@@ -6,7 +6,7 @@ import UserServices from "../services/UserServices.js";
 
 const router = useRouter();
 const isCreateAccount = ref(false);
-const loginType = ref("admin")
+const loginType = ref("user");
 const snackbar = ref({
   value: false,
   color: "",
@@ -36,6 +36,7 @@ async function createAccount() {
       snackbar.value.value = true;
       snackbar.value.color = "green";
       snackbar.value.text = "Account created successfully!";
+      isCreateAccount.value = false;
       router.push({ name: "login" });
     })
     .catch((error) => {
@@ -96,12 +97,16 @@ function closeSnackBar() {
             required
           ></v-text-field>
           <v-radio-group v-model="loginType" inline>
-            <v-radio label="Admin" value="admin"></v-radio>
             <v-radio label="User" value="user"></v-radio>
+            <v-radio label="Admin" value="admin"></v-radio>
           </v-radio-group>
         </v-card-text>
         <v-card-actions>
-          <v-btn v-if="loginType == 'user'" variant="flat" color="secondary" @click="openCreateAccount()"
+          <v-btn
+            v-if="loginType == 'user'"
+            variant="flat"
+            color="secondary"
+            @click="openCreateAccount()"
             >Create Account</v-btn
           >
           <v-spacer></v-spacer>
@@ -125,7 +130,7 @@ function closeSnackBar() {
 
       <v-dialog persistent v-model="isCreateAccount" width="700">
         <v-card class="rounded-lg elevation-5">
-          <v-card-title class="headline mb-2">Create User Account </v-card-title>
+          <v-card-title class="headline mb-2">Create User Account</v-card-title>
           <v-card-text>
             <v-text-field
               v-model="user.firstName"
