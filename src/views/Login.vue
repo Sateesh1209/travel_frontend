@@ -37,6 +37,13 @@ async function createAccount() {
       snackbar.value.color = "green";
       snackbar.value.text = "Account created successfully!";
       isCreateAccount.value = false;
+      user.value = {
+        firstName: "",
+        lastName: "",
+        email: "",
+        password: "",
+        isAdmin: user.value.isAdmin,
+      };
       router.push({ name: "login" });
     })
     .catch((error) => {
@@ -56,6 +63,13 @@ async function login() {
       snackbar.value.value = true;
       snackbar.value.color = "green";
       snackbar.value.text = "Login successful!";
+      user.value = {
+        firstName: "",
+        lastName: "",
+        email: "",
+        password: "",
+        isAdmin: user.value.isAdmin,
+      };
       router.push({ name: "travelplans" });
     })
     .catch((error) => {
@@ -68,10 +82,24 @@ async function login() {
 
 function openCreateAccount() {
   isCreateAccount.value = true;
+  user.value = {
+    firstName: "",
+    lastName: "",
+    email: "",
+    password: "",
+    isAdmin: false,
+  };
 }
 
 function closeCreateAccount() {
   isCreateAccount.value = false;
+  user.value = {
+    firstName: "",
+    lastName: "",
+    email: "",
+    password: "",
+    isAdmin: false,
+  };
 }
 
 function closeSnackBar() {
