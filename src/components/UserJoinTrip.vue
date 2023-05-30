@@ -71,7 +71,7 @@ const onTravellersCountChange = (e) => {
   console.log(e);
   if (e) {
     if (e > props.planDetails?.capacity) {
-      tripUserInputs.value.totalTravellers = 10;
+      tripUserInputs.value.totalTravellers = props.planDetails?.capacity;
       generateTravellers(10);
     } else if (e < 1) {
       tripUserInputs.value.totalTravellers = 1;
