@@ -139,6 +139,7 @@ const joinTripOpen = () => {
               <th class="text-left">Days</th>
               <th class="text-left">Location</th>
               <th class="text-left">Food Special</th>
+              <th class="text-left">Events</th>
               <th class="text-left">Places Covered</th>
             </tr>
           </thead>
@@ -148,7 +149,17 @@ const joinTripOpen = () => {
               <td>{{ day.location }}</td>
               <td>{{ day.meals }}</td>
               <td>
-                <!-- <v-chip size="small" pill>{{ day.visitPlaces }}</v-chip> -->
+                <v-chip
+                  v-if="day?.dayEvents"
+                  size="small"
+                  class="mr-1"
+                  v-for="event in day?.dayEvents?.split(',')"
+                  pill
+                  >{{ event }}</v-chip
+                >
+                <span v-else> - </span>
+              </td>
+              <td>
                 <v-chip
                   v-if="day?.visitPlaces"
                   size="small"

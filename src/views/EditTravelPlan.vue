@@ -92,6 +92,7 @@ async function getRecipe() {
           item.visitPlaces = item?.visitPlaces
             ? item?.visitPlaces?.split(",")
             : [];
+          item.dayEvents = item?.dayEvents ? item?.dayEvents?.split(",") : [];
         });
       }
       tripIterations.value = response.data[0].recipeStep;
@@ -349,8 +350,10 @@ const onDateRangeSelect = (modelData) => {
       location: "",
       hotelName: "",
       meals: "",
+      dayEvents: [],
       visitPlaces: [],
       tempPlaceName: "",
+      tempEventName: "",
     });
   }
   tripIterations.value = tempTrips;
@@ -368,6 +371,18 @@ const addPlaceNameClick = (trip) => {
 const removeTripPlace = (trip, removeItem) => {
   let tempPlaces = [...trip.visitPlaces];
   trip.visitPlaces = tempPlaces.filter((e) => e != removeItem);
+};
+
+const addEventNameClick = (trip) => {
+  if (trip.tempEventName?.length > 0) {
+    trip.dayEvents?.push(trip.tempEventName);
+    trip.tempEventName = "";
+  }
+};
+
+const removeEvent = (trip, removeItem) => {
+  let tempEvents = [...trip.dayEvents];
+  trip.dayEvents = tempEvents.filter((e) => e != removeItem);
 };
 
 const closeParentPopup = () => {
@@ -505,6 +520,53 @@ function closeSnackBar() {
                           label="Food Special"
                           required
                         ></v-text-field>
+                        <p class="font-italic text-left">
+                          Events for the day:
+                          <template v-if="trip.dayEvents.length == 0"
+                            ><span
+                              v-bind:style="{
+                                color: '#707070',
+                                'font-size': '14px',
+                              }"
+                              >Please enter event name below and click on add to
+                              list them..</span
+                            ></template
+                          >
+                          <template
+                            v-for="(event, eIndex) in trip.dayEvents"
+                            :key="{ eIndex }"
+                          >
+                            <v-chip
+                              class="ma-2"
+                              closable
+                              @click:close="removeEvent(trip, event)"
+                            >
+                              {{ event }}
+                            </v-chip>
+                          </template>
+                        </p>
+                        <v-row no-gutters>
+                          <v-col cols="4" class="d-flex justify-start">
+                            <v-responsive max-width="350">
+                              <v-text-field
+                                v-model="trip.tempEventName"
+                                v-on:keyup.enter="addEventNameClick(trip)"
+                                label="Event name.."
+                                clearable
+                              ></v-text-field>
+                            </v-responsive>
+                          </v-col>
+                          <v-col cols="1" class="d-flex mt-3"
+                            ><div @click="addEventNameClick(trip)">
+                              <v-img
+                                class="mx-2"
+                                :src="addIcon"
+                                height="30"
+                                width="30"
+                                v-bind:style="{ cursor: 'pointer' }"
+                                contain
+                              ></v-img></div></v-col
+                        ></v-row>
                         <p class="font-italic text-left">
                           Places Covered:
                           <template v-if="trip.visitPlaces.length == 0"
