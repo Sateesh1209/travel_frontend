@@ -9,14 +9,14 @@ const router = createRouter({
       component: () => import("./views/Login.vue"),
     },
     {
-      path: "/travelplans",
+      path: "/TravelPlans",
       name: "travelplans",
       component: () => import("./views/TravelPlans.vue"),
     },
     {
-      path: "/ingredients",
-      name: "ingredients",
-      component: () => import("./views/IngredientList.vue"),
+      path: "/JoinedPlans",
+      name: "joinedplans",
+      component: () => import("./views/JoinedPlans.vue"),
     },
   ],
 });

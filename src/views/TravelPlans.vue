@@ -1,11 +1,10 @@
 <script setup>
 import { onMounted } from "vue";
 import { ref } from "vue";
-import VueDatePicker from "@vuepic/vue-datepicker";
 import "@vuepic/vue-datepicker/dist/main.css";
-import RecipeCard from "../components/RecipeCardComponent.vue";
-import RecipeServices from "../services/RecipeServices.js";
-import EditTravelPlan from "./EditTravelPlan.vue";
+import TravelPlanCardComponent from "../components/TravelPlanCardComponent.vue";
+import TravelPlanServices from "../services/TravelPlanServices.js";
+import EditTravelPlan from "../components/EditTravelPlan.vue";
 
 const travelPlans = ref([]);
 const viewType = ref("add");
@@ -25,13 +24,6 @@ const snackbar = ref({
   color: "",
   text: "",
 });
-const newRecipe = ref({
-  name: "",
-  description: "",
-  servings: 0,
-  time: "30",
-  isPublished: false,
-});
 
 onMounted(async () => {
   user.value = JSON.parse(localStorage.getItem("user"));
@@ -44,7 +36,7 @@ async function getRecipes() {
   planEditId.value = null;
   // user.value = JSON.parse(localStorage.getItem("user"));
   if (user.value !== null && user.value.id !== null && isAdmin.value) {
-    await RecipeServices.getTravelPlansByUserId(user.value.id)
+    await TravelPlanServices.getTravelPlansByUserId(user.value.id)
       .then((response) => {
         travelPlans.value = response.data;
       })
@@ -55,7 +47,7 @@ async function getRecipes() {
         snackbar.value.text = error.response.data.message;
       });
   } else {
-    await RecipeServices.getRecipes()
+    await TravelPlanServices.getRecipes()
       .then((response) => {
         travelPlans.value = response.data;
       })
@@ -111,7 +103,7 @@ const openEditPopup = (id) => {
         </v-col>
       </v-row>
       <template v-if="travelPlans?.length > 0">
-        <RecipeCard
+        <TravelPlanCardComponent
           v-for="tPlan in travelPlans"
           :key="tPlan.id"
           :tPlan="tPlan"
@@ -119,7 +111,6 @@ const openEditPopup = (id) => {
           :openEditPopup="openEditPopup"
           :getUpdatedTrips="getRecipes"
           :showSnackbar="showSnackbar"
-          @deletedList="getLists()"
         />
       </template>
       <template v-else>
