@@ -1,14 +1,13 @@
 <script setup>
 import { onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
-import RecipeStepServices from "../services/RecipeStepServices";
-import RecipeServices from "../services/RecipeServices";
+import TravelPlanServices from "../services/TravelPlanServices";
 import UserJoinTrip from "./UserJoinTrip.vue";
 
 const router = useRouter();
 
+const showDeleteConf = ref(false);
 const showDetails = ref(false);
-const recipeSteps = ref([]);
 const user = ref(null);
 const isJoinTrip = ref(false);
 
@@ -20,6 +19,7 @@ const props = defineProps({
   openEditPopup: Function,
   getUpdatedTrips: Function,
   showSnackbar: Function,
+  openDeletePopup: Function,
 });
 
 onMounted(async () => {
@@ -27,10 +27,11 @@ onMounted(async () => {
 });
 
 async function deleteTrip() {
-  await RecipeServices.deleteTravelPlan(props.tPlan.id)
+  await TravelPlanServices.deleteTravelPlan(props.tPlan.id)
     .then((response) => {
       props.showSnackbar("green", response.data.msg);
       if (response.data.status == "success") {
+        showDeleteConf.value = false;
         props.getUpdatedTrips();
       }
     })
@@ -63,6 +64,14 @@ const closeJoinTrip = () => {
 const joinTripOpen = () => {
   isJoinTrip.value = true;
 };
+
+function openDeletePopup() {
+  showDeleteConf.value = true;
+}
+
+function closeDeletePopup() {
+  showDeleteConf.value = false;
+}
 </script>
 
 <template>
@@ -109,7 +118,7 @@ const joinTripOpen = () => {
               class="mr-3"
               size="small"
               icon="mdi-delete"
-              @click="deleteTrip()"
+              @click="openDeletePopup()"
             ></v-icon>
           </template>
           <template v-if="user !== null && props.isAdmin">
@@ -144,18 +153,19 @@ const joinTripOpen = () => {
             </tr>
           </thead>
           <tbody>
-            <tr v-for="day in tPlan.recipeStep" :key="day.id">
+            <tr v-for="day in tPlan.tripItenary" :key="day.id">
               <td>Day {{ day.day }}</td>
               <td>{{ day.location }}</td>
               <td>{{ day.meals }}</td>
               <td>
                 <v-chip
-                  v-if="day?.dayEvents"
+                  v-if="day?.events?.length > 0"
                   size="small"
                   class="mr-1"
-                  v-for="event in day?.dayEvents?.split(',')"
+                  v-for="event in day?.events"
+                  :key="event?.id"
                   pill
-                  >{{ event }}</v-chip
+                  >{{ event?.event }}</v-chip
                 >
                 <span v-else> - </span>
               </td>
@@ -184,5 +194,29 @@ const joinTripOpen = () => {
         :showSnackbar="showSnackbar"
       ></UserJoinTrip>
     </v-card>
+  </v-dialog>
+  <v-dialog persistent v-model="showDeleteConf" width="600">
+    <v-container>
+      <v-card class="rounded-lg elevation-5">
+        <div class="pb-2 pl-5 pt-5 pr-5">
+          If you delete this plan users who ever joined in this trip will get
+          auto dropped off. Are you sure want to delete this plan?
+          <v-row class="mt-3">
+            <v-col class="d-flex justify-end">
+              <v-btn
+                class="mr-3"
+                variant="flat"
+                color="secondary"
+                @click="closeDeletePopup()"
+                >Cancel</v-btn
+              >
+              <v-btn variant="flat" color="primary" @click="deleteTrip()"
+                >Confirm</v-btn
+              >
+            </v-col>
+          </v-row>
+        </div>
+      </v-card>
+    </v-container>
   </v-dialog>
 </template>
