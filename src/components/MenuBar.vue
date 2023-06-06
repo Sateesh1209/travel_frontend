@@ -45,7 +45,7 @@ function logout() {
         Login
       </v-btn>
       <v-btn
-        v-if="user !== null && user?.isAdmin"
+        v-if="user !== null && !user?.isAdmin"
         class="mx-2"
         :to="{ name: 'joinedplans' }"
       >

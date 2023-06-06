@@ -1,6 +1,7 @@
 <script setup>
 import { onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
+import TripTravellerServices from "../services/TripTravellerServices";
 
 const router = useRouter();
 const user = ref({
@@ -14,44 +15,103 @@ const user = ref({
 
 const tripUserInputs = ref({
   userId: null,
-  tripid: null,
-  emergencyContact: "",
+  tripId: null,
+  emergencyContact: null,
   totalTravellers: 1,
+  travellersList: [],
 });
-const travellersList = ref(null);
+
 const showJoinTrip = ref(true);
 
 const props = defineProps({
   planDetails: Object,
+  tripStatus: null,
   closeJoinTrip: Function,
+  getTripTravellers: Function,
   showSnackbar: Function,
 });
 
 onMounted(async () => {
   // await getRecipeSteps();
   user.value = JSON.parse(localStorage.getItem("user"));
-  travellersList.value = [
-    {
-      travellerNum: 1,
-      firstName: user.value.firstName,
-      lastName: user.value.lastName,
-    },
-  ];
+  tripUserInputs.value = {
+    userId: user.value.id,
+    tripId: props.planDetails.id,
+    emergencyContact: props.tripStatus
+      ? props.planDetails?.tripTraveller?.emergencyContact
+      : null,
+    totalTravellers: props.tripStatus
+      ? props.planDetails?.tripTraveller?.totalTravellers
+      : 1,
+    travellersList:
+      props.tripStatus && props.planDetails?.tripTraveller?.totalTravellers > 1
+        ? [
+            {
+              travellerNum: 1,
+              firstName: user.value.firstName,
+              lastName: user.value.lastName,
+            },
+            ...props.planDetails?.tripTraveller?.travellers,
+          ]
+        : [
+            {
+              travellerNum: 1,
+              firstName: user.value.firstName,
+              lastName: user.value.lastName,
+            },
+          ],
+  };
 });
 
-// async function getRecipeSteps() {
-//   await RecipeStepServices.getRecipeStepsForRecipeWithIngredients(
-//     props.tPlan.id
-//   )
-//     .then((response) => {
-//       recipeSteps.value = response.data;
-//     })
-//     .catch((error) => {
-//       console.log(error);
-//     });
-// }
+async function userJoinTrip() {
+  let payload = {
+    ...tripUserInputs.value,
+    travellersList: tripUserInputs.value.travellersList.slice(1),
+  };
+  await TripTravellerServices.addTravellersByTripId(
+    props.planDetails.id,
+    payload
+  )
+    .then((response) => {
+      props.showSnackbar("green", response.data.msg);
+      if (response.data.status == "success") {
+        setTimeout(() => {
+          router.push({ name: "joinedplans" });
+        }, 1000);
+      }
+    })
+    .catch((error) => {
+      console.log(error);
+      props.showSnackbar("error", error.message);
+    });
+}
 
-const joinTripClick = () => {};
+async function userUpdateTripTravellers() {
+  let payload = {
+    ...tripUserInputs.value,
+    travellersList: tripUserInputs.value.travellersList.slice(1),
+  };
+  await TripTravellerServices.updateTripTravellers(
+    props.planDetails.id,
+    props.planDetails?.tripTraveller?.id,
+    payload
+  )
+    .then((response) => {
+      props.showSnackbar("green", response.data.msg);
+      if (response.data.status == "success") {
+        props.getTripTravellers();
+        props.closeJoinTrip();
+      }
+    })
+    .catch((error) => {
+      console.log(error);
+      props.showSnackbar("error", error.message);
+    });
+}
+
+const joinTripClick = () => {
+  userJoinTrip();
+};
 
 const generateTravellers = (currCount) => {
   if (currCount >= 1 && currCount <= props.planDetails.capacity) {
@@ -63,7 +123,7 @@ const generateTravellers = (currCount) => {
         lastName: i == 0 ? user.value.lastName : "",
       });
     }
-    travellersList.value = tempTravellers;
+    tripUserInputs.value.travellersList = tempTravellers;
   }
 };
 
@@ -72,7 +132,7 @@ const onTravellersCountChange = (e) => {
   if (e) {
     if (e > props.planDetails?.capacity) {
       tripUserInputs.value.totalTravellers = props.planDetails?.capacity;
-      generateTravellers(10);
+      generateTravellers(props.planDetails?.capacity);
     } else if (e < 1) {
       tripUserInputs.value.totalTravellers = 1;
       generateTravellers(1);
@@ -89,9 +149,11 @@ const onTravellersCountChange = (e) => {
 <template>
   <v-dialog persistent v-model="showJoinTrip" width="1080">
     <v-card class="rounded-lg elevation-5">
-      <v-card-title class="headline mb-2"
-        >Join {{ props.planDetails?.name }}</v-card-title
-      >
+      <v-card-title class="headline mb-2">{{
+        props.tripStatus
+          ? `Update ${props.planDetails?.name}`
+          : `Join ${props.planDetails?.name}`
+      }}</v-card-title>
       <v-card-text>
         <v-text-field
           v-model="tripUserInputs.emergencyContact"
@@ -107,7 +169,7 @@ const onTravellersCountChange = (e) => {
           :hint="`Maximum allowed travellers for this trip is ${props.planDetails?.capacity}`"
         ></v-text-field>
         <v-expansion-panels class="mt-5">
-          <template v-for="(item, index) in travellersList">
+          <template v-for="(item, index) in tripUserInputs.travellersList">
             <v-expansion-panel>
               <v-expansion-panel-title v-slot="{ open }">
                 <v-row no-gutters>
@@ -153,8 +215,13 @@ const onTravellersCountChange = (e) => {
         <v-btn variant="flat" color="secondary" @click="props.closeJoinTrip()"
           >Close</v-btn
         >
-        <v-btn variant="flat" color="primary" @click="joinTripClick()"
-          >Confirm & Join</v-btn
+        <v-btn
+          variant="flat"
+          color="primary"
+          @click="
+            props.tripStatus ? userUpdateTripTravellers() : joinTripClick()
+          "
+          >{{ props.tripStatus ? "Update" : "Confirm & Join" }}</v-btn
         >
       </v-card-actions>
     </v-card>
