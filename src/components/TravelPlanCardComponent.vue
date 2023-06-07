@@ -3,6 +3,8 @@ import { onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import TravelPlanServices from "../services/TravelPlanServices";
 import UserJoinTrip from "./UserJoinTrip.vue";
+import TravellersJoinedCard from "./TravellersJoinedCard.vue";
+import TripTravellerServices from "../services/TripTravellerServices";
 
 const router = useRouter();
 
@@ -16,10 +18,12 @@ const props = defineProps({
     required: true,
   },
   isAdmin: false,
+  tripStatus: null,
   openEditPopup: Function,
   getUpdatedTrips: Function,
   showSnackbar: Function,
   openDeletePopup: Function,
+  getTripTravellers: Function,
 });
 
 onMounted(async () => {
@@ -27,21 +31,40 @@ onMounted(async () => {
 });
 
 async function deleteTrip() {
-  await TravelPlanServices.deleteTravelPlan(props.tPlan.id)
-    .then((response) => {
-      props.showSnackbar("green", response.data.msg);
-      if (response.data.status == "success") {
-        showDeleteConf.value = false;
-        props.getUpdatedTrips();
-      }
-    })
-    .catch((error) => {
-      console.log(error);
-      props.showSnackbar("error", error.message);
-    });
+  if (router.currentRoute.value.name == "joinedplans") {
+    await TripTravellerServices.deleteTripTravellers(
+      props.tPlan?.id,
+      props.tPlan?.tripTraveller?.id
+    )
+      .then((response) => {
+        props.showSnackbar("green", response.data.msg);
+        if (response.data.status == "success") {
+          showDeleteConf.value = false;
+          props.getTripTravellers();
+        }
+      })
+      .catch((error) => {
+        console.log(error);
+        props.showSnackbar("error", error.message);
+      });
+  } else {
+    await TravelPlanServices.deleteTravelPlan(props.tPlan.id)
+      .then((response) => {
+        props.showSnackbar("green", response.data.msg);
+        if (response.data.status == "success") {
+          showDeleteConf.value = false;
+          props.getUpdatedTrips();
+        }
+      })
+      .catch((error) => {
+        console.log(error);
+        props.showSnackbar("error", error.message);
+      });
+  }
 }
 
-function navigateToEdit() {
+function navigateToEdit(e) {
+  e?.stopPropagation();
   props.openEditPopup(props.tPlan.id);
 }
 
@@ -61,11 +84,13 @@ const closeJoinTrip = () => {
   isJoinTrip.value = false;
 };
 
-const joinTripOpen = () => {
+const joinTripOpen = (e) => {
+  e?.stopPropagation();
   isJoinTrip.value = true;
 };
 
-function openDeletePopup() {
+function openDeletePopup(e) {
+  e?.stopPropagation();
   showDeleteConf.value = true;
 }
 
@@ -118,18 +143,27 @@ function closeDeletePopup() {
               class="mr-3"
               size="small"
               icon="mdi-delete"
-              @click="openDeletePopup()"
+              @click="(e) => openDeletePopup(e)"
             ></v-icon>
           </template>
           <template v-if="user !== null && props.isAdmin">
             <v-icon
               size="small"
               icon="mdi-pencil"
-              @click="navigateToEdit()"
+              @click="(e) => navigateToEdit(e)"
             ></v-icon>
           </template>
-          <template v-else-if="user !== null && !props.isAdmin">
-            <v-btn variant="flat" color="primary" @click="joinTripOpen()"
+          <template
+            v-else-if="
+              user !== null &&
+              !props.isAdmin &&
+              router.currentRoute.value.name != 'joinedplans'
+            "
+          >
+            <v-btn
+              variant="flat"
+              color="primary"
+              @click="(e) => joinTripOpen(e)"
               >Join Trip</v-btn
             >
           </template>
@@ -144,7 +178,11 @@ function closeDeletePopup() {
         <h3>Trip Iterations</h3>
         <v-table>
           <thead>
-            <tr>
+            <tr
+              v-bind:style="{
+                backgroundColor: '#bcbbf7',
+              }"
+            >
               <th class="text-left">Days</th>
               <th class="text-left">Location</th>
               <th class="text-left">Food Special</th>
@@ -183,14 +221,28 @@ function closeDeletePopup() {
             </tr>
           </tbody>
         </v-table>
+        <TravellersJoinedCard
+          v-if="
+            user !== null &&
+            !props.isAdmin &&
+            router.currentRoute.value.name == 'joinedplans'
+          "
+          :tPlan="props.tPlan"
+          :user="user"
+          :tripStatus="props.tripStatus"
+          :openDeletePopup="openDeletePopup"
+          :joinTripOpen="joinTripOpen"
+        ></TravellersJoinedCard>
       </v-card-text>
     </v-expand-transition>
   </v-card>
   <v-dialog persistent v-model="isJoinTrip" width="1080">
     <v-card class="rounded-lg elevation-5">
       <UserJoinTrip
-        :planDetails="tPlan"
+        :planDetails="props.tPlan"
+        :tripStatus="props.tripStatus"
         :closeJoinTrip="closeJoinTrip"
+        :getTripTravellers="props.getTripTravellers"
         :showSnackbar="showSnackbar"
       ></UserJoinTrip>
     </v-card>
@@ -199,8 +251,12 @@ function closeDeletePopup() {
     <v-container>
       <v-card class="rounded-lg elevation-5">
         <div class="pb-2 pl-5 pt-5 pr-5">
-          If you delete this plan users who ever joined in this trip will get
-          auto dropped off. Are you sure want to delete this plan?
+          {{
+            router.currentRoute.value.name == "joinedplans"
+              ? "Are you sure want to drop out from the trip?"
+              : "If you delete this plan users who ever joined in this trip will get auto dropped off. Are you sure want to delete this plan?"
+          }}
+
           <v-row class="mt-3">
             <v-col class="d-flex justify-end">
               <v-btn
