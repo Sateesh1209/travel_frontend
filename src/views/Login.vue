@@ -7,6 +7,7 @@ import UserServices from "../services/UserServices.js";
 const router = useRouter();
 const isCreateAccount = ref(false);
 const loginType = ref("user");
+const emailInValid = ref(false);
 const snackbar = ref({
   value: false,
   color: "",
@@ -33,6 +34,7 @@ function navigateToRecipes() {
 async function createAccount() {
   await UserServices.addUser(user.value)
     .then(() => {
+      emailInValid.value = false;
       snackbar.value.value = true;
       snackbar.value.color = "green";
       snackbar.value.text = "Account created successfully!";
@@ -56,7 +58,6 @@ async function createAccount() {
 
 async function login() {
   user.value.isAdmin = loginType.value == "admin" ? true : false;
-  console.log(user.value);
   await UserServices.loginUser(user)
     .then((data) => {
       window.localStorage.setItem("user", JSON.stringify(data.data));
@@ -81,6 +82,7 @@ async function login() {
 }
 
 function openCreateAccount() {
+  emailInValid.value = false;
   isCreateAccount.value = true;
   user.value = {
     firstName: "",
@@ -92,6 +94,7 @@ function openCreateAccount() {
 }
 
 function closeCreateAccount() {
+  emailInValid.value = false;
   isCreateAccount.value = false;
   user.value = {
     firstName: "",
@@ -105,6 +108,18 @@ function closeCreateAccount() {
 function closeSnackBar() {
   snackbar.value.value = false;
 }
+
+function onEmailChange() {
+  if (user.value.email) {
+    if (user.value.email.match(/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}$/i)) {
+      emailInValid.value = false;
+    } else {
+      emailInValid.value = true;
+    }
+  } else {
+    emailInValid.value = false;
+  }
+}
 </script>
 
 <template>
@@ -116,6 +131,8 @@ function closeSnackBar() {
           <v-text-field
             v-model="user.email"
             label="Email"
+            :hint="emailInValid && 'Please enter valid email'"
+            @input="onEmailChange"
             required
           ></v-text-field>
 
@@ -139,7 +156,13 @@ function closeSnackBar() {
           >
           <v-spacer></v-spacer>
 
-          <v-btn variant="flat" color="primary" @click="login()">Login</v-btn>
+          <v-btn
+            variant="flat"
+            color="primary"
+            :disabled="emailInValid || !user.email || !user.password"
+            @click="login()"
+            >Login</v-btn
+          >
         </v-card-actions>
       </v-card>
 
@@ -175,6 +198,8 @@ function closeSnackBar() {
             <v-text-field
               v-model="user.email"
               label="Email"
+              :hint="emailInValid && 'Please enter valid email'"
+              @input="onEmailChange"
               required
             ></v-text-field>
 
@@ -192,7 +217,17 @@ function closeSnackBar() {
               @click="closeCreateAccount()"
               >Close</v-btn
             >
-            <v-btn variant="flat" color="primary" @click="createAccount()"
+            <v-btn
+              variant="flat"
+              color="primary"
+              :disabled="
+                emailInValid ||
+                !user.email ||
+                !user.password ||
+                !user.firstName ||
+                !user.lastName
+              "
+              @click="createAccount()"
               >Create Account</v-btn
             >
           </v-card-actions>
