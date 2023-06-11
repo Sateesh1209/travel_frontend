@@ -1,4 +1,4 @@
-<script setup
+<script setup>
 import { ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import UserServices from "../services/UserServices";
