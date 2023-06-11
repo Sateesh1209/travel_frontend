@@ -1,5 +1,4 @@
-<script setup>
-import ocLogo from "/oc_logo.png";
+<script setup
 import { ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import UserServices from "../services/UserServices";
@@ -9,10 +8,8 @@ const router = useRouter();
 
 const user = ref(null);
 const title = ref("SHV-DJ Travel Agent");
-const logoURL = ref("");
 
 onMounted(() => {
-  logoURL.value = ocLogo;
   user.value = JSON.parse(localStorage.getItem("user"));
 });
 
