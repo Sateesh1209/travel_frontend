@@ -1,11 +1,14 @@
 import apiClient from "./services";
 
 export default {
-  getRecipes() {
+  getTravelPlans() {
     return apiClient.get("tripPlan");
   },
   getTravelPlansByUserId(userId) {
     return apiClient.get("tripPlan/user/" + userId);
+  },
+  getAdminTravelPlans() {
+    return apiClient.get("tripPlan/admin");
   },
   getTravelPlanByPlanId(id) {
     return apiClient.get("tripPlan/" + id);

@@ -7,7 +7,9 @@ import TravelPlanServices from "../services/TravelPlanServices.js";
 import EditTravelPlan from "../components/EditTravelPlan.vue";
 
 const travelPlans = ref([]);
+const constTravelPlans = ref([]);
 const viewType = ref("add");
+const filterPlans = ref("");
 const planEditId = ref(null);
 const isAdd = ref(false);
 const isAdmin = ref(false);
@@ -34,11 +36,24 @@ onMounted(async () => {
 async function getRecipes() {
   isAdd.value = false;
   planEditId.value = null;
-  // user.value = JSON.parse(localStorage.getItem("user"));
   if (user.value !== null && user.value.id !== null && isAdmin.value) {
+    await TravelPlanServices.getAdminTravelPlans()
+      .then((response) => {
+        travelPlans.value = response.data;
+        constTravelPlans.value = response.data;
+        onFilterChange();
+      })
+      .catch((error) => {
+        console.log(error);
+        snackbar.value.value = true;
+        snackbar.value.color = "error";
+        snackbar.value.text = error.response.data.message;
+      });
+  } else if (user.value !== null && user.value.id !== null && !isAdmin.value) {
     await TravelPlanServices.getTravelPlansByUserId(user.value.id)
       .then((response) => {
         travelPlans.value = response.data;
+        constTravelPlans.value = response.data;
       })
       .catch((error) => {
         console.log(error);
@@ -47,7 +62,7 @@ async function getRecipes() {
         snackbar.value.text = error.response.data.message;
       });
   } else {
-    await TravelPlanServices.getRecipes()
+    await TravelPlanServices.getTravelPlans()
       .then((response) => {
         travelPlans.value = response.data;
       })
@@ -85,6 +100,22 @@ const openEditPopup = (id) => {
   planEditId.value = id;
   isAdd.value = true;
 };
+
+const onFilterChange = () => {
+  if (filterPlans.value) {
+    let tempFilteredPlans = [];
+    tempFilteredPlans = constTravelPlans.value.filter(
+      (item) =>
+        item?.name?.toLowerCase()?.includes(filterPlans.value?.toLowerCase()) ||
+        item?.countryName
+          ?.toLowerCase()
+          ?.includes(filterPlans.value?.toLowerCase())
+    );
+    travelPlans.value = tempFilteredPlans;
+  } else {
+    travelPlans.value = constTravelPlans.value;
+  }
+};
 </script>
 
 <template>
@@ -100,6 +131,23 @@ const openEditPopup = (id) => {
           <template v-if="isAdmin">
             <v-btn color="accent" @click="openAdd()">Add</v-btn>
           </template>
+        </v-col>
+      </v-row>
+      <v-row>
+        <v-col>
+          <v-text-field
+            v-if="constTravelPlans.length > 0"
+            v-model="filterPlans"
+            append-icon="mdi-magnify"
+            v-bind:style="{
+              marginBottom: '10px',
+              backgroundColor: 'rgba(186, 186, 203, 0.82)',
+            }"
+            label="Search by plan name / country name..."
+            @input="onFilterChange"
+            single-line
+            hide-details
+          ></v-text-field>
         </v-col>
       </v-row>
       <template v-if="travelPlans?.length > 0">

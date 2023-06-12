@@ -8,7 +8,7 @@ export default {
     return apiClient.get(`user/${userId}/tripswithtripTravellers`);
   },
   getTripTravellersByTripId(tripId) {
-    return apiClient.get(`trips/${tripId}/tripTravellers`);
+    return apiClient.get(`tripPlan/travellersByTripId/${tripId}`);
   },
   addTravellersByTripId(tripId, plan) {
     return apiClient.post(`trips/${tripId}/tripTravellers`, plan);
