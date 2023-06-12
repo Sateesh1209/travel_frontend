@@ -81,7 +81,7 @@ async function updateRecipe() {
   if (props.viewType == "edit") {
     await TravelPlanServices.updateTravelPlan(props.planEditId, payload)
       .then((response) => {
-        props.showSnackbar("green", response.data.msg);
+        props.showSnackbar("green", response.data.message);
         if (response.data.status == "success") {
           props.getUpdatedTrips();
           // route.push({ name: "travelplans" });
@@ -94,7 +94,7 @@ async function updateRecipe() {
   } else {
     await TravelPlanServices.addTravelPlan(payload)
       .then((response) => {
-        props.showSnackbar("green", response.data.msg);
+        props.showSnackbar("green", response.data.message);
         if (response.data.status == "success") {
           props.getUpdatedTrips();
         }
@@ -189,7 +189,7 @@ function closeSnackBar() {
                 <VueDatePicker
                   class="mb-5"
                   v-model="dateRange"
-                  placeholder="Select date range..."
+                  placeholder="Select date range*"
                   range
                   @update:model-value="onDateRangeSelect"
                   :partial-range="false"
@@ -198,19 +198,19 @@ function closeSnackBar() {
                 <v-text-field
                   class="w-100"
                   v-model="travelPlan.tripName"
-                  label="Trip Name"
+                  label="Trip Name*"
                   required
                 ></v-text-field>
                 <v-text-field
                   class="w-100"
                   v-model="travelPlan.countryName"
-                  label="Country Name"
+                  label="Country Name*"
                   required
                 ></v-text-field>
                 <v-text-field
                   class="w-100"
                   v-model.number="travelPlan.capacity"
-                  label="Max allowed travellers"
+                  label="Max allowed travellers*"
                   type="number"
                   required
                 ></v-text-field>
@@ -218,7 +218,7 @@ function closeSnackBar() {
                   class="w-100"
                   v-model="travelPlan.travelDescription"
                   rows="6"
-                  label="Description"
+                  label="Description*"
                 ></v-textarea>
               </v-col>
             </v-row>
@@ -406,9 +406,27 @@ function closeSnackBar() {
             variant="flat"
             color="primary"
             @click="updateRecipe()"
+            :disabled="
+              !dateRange ||
+              !travelPlan?.tripName ||
+              !travelPlan?.countryName ||
+              !travelPlan?.capacity ||
+              !travelPlan?.travelDescription
+            "
             >Add Plan</v-btn
           >
-          <v-btn v-else variant="flat" color="primary" @click="updateRecipe()"
+          <v-btn
+            v-else
+            variant="flat"
+            color="primary"
+            @click="updateRecipe()"
+            :disabled="
+              !dateRange ||
+              !travelPlan?.tripName ||
+              !travelPlan?.countryName ||
+              !travelPlan?.capacity ||
+              !travelPlan?.travelDescription
+            "
             >Update Plan</v-btn
           >
         </div>

@@ -37,7 +37,7 @@ async function deleteTrip() {
       props.tPlan?.tripTraveller?.id
     )
       .then((response) => {
-        props.showSnackbar("green", response.data.msg);
+        props.showSnackbar("green", response.data.message);
         if (response.data.status == "success") {
           showDeleteConf.value = false;
           props.getTripTravellers();
@@ -50,7 +50,7 @@ async function deleteTrip() {
   } else {
     await TravelPlanServices.deleteTravelPlan(props.tPlan.id)
       .then((response) => {
-        props.showSnackbar("green", response.data.msg);
+        props.showSnackbar("green", response.data.message);
         if (response.data.status == "success") {
           showDeleteConf.value = false;
           props.getUpdatedTrips();
@@ -106,7 +106,7 @@ function closeDeletePopup() {
   >
     <v-card-title class="headline">
       <v-row align="center">
-        <v-col cols="10">
+        <v-col>
           {{ tPlan.name }} <v-icon start icon="mdi-airplane-takeoff"></v-icon>
           {{ tPlan.countryName }}
           <v-chip class="ma-2" color="primary" label>
@@ -138,6 +138,13 @@ function closeDeletePopup() {
           </v-chip>
         </v-col>
         <v-col class="d-flex justify-end">
+          <template v-if="user !== null && props.isAdmin && tPlan.isPublished">
+            <router-link
+              :to="{ name: 'travellerslist', params: { id: tPlan?.id } }"
+            >
+              <v-btn variant="flat" color="primary">Travellers List</v-btn>
+            </router-link>
+          </template>
           <template v-if="user !== null && props.isAdmin">
             <v-icon
               class="mr-3"
@@ -157,7 +164,8 @@ function closeDeletePopup() {
             v-else-if="
               user !== null &&
               !props.isAdmin &&
-              router.currentRoute.value.name != 'joinedplans'
+              router.currentRoute.value.name != 'joinedplans' &&
+              tPlan?.tripTravellers?.length == 0
             "
           >
             <v-btn

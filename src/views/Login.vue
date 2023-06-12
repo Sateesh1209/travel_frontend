@@ -72,6 +72,7 @@ async function login() {
         isAdmin: user.value.isAdmin,
       };
       router.push({ name: "travelplans" });
+      // this.$router.push({ name: 'edit', params: { id: joke.id }})
     })
     .catch((error) => {
       console.log(error);
@@ -130,7 +131,7 @@ function onEmailChange() {
         <v-card-text>
           <v-text-field
             v-model="user.email"
-            label="Email"
+            label="Email*"
             :hint="emailInValid && 'Please enter valid email'"
             @input="onEmailChange"
             required
@@ -138,7 +139,8 @@ function onEmailChange() {
 
           <v-text-field
             v-model="user.password"
-            label="Password"
+            label="Password*"
+            type="password"
             required
           ></v-text-field>
           <v-radio-group v-model="loginType" inline>
@@ -185,19 +187,19 @@ function onEmailChange() {
           <v-card-text>
             <v-text-field
               v-model="user.firstName"
-              label="First Name"
+              label="First Name*"
               required
             ></v-text-field>
 
             <v-text-field
               v-model="user.lastName"
-              label="Last Name"
+              label="Last Name*"
               required
             ></v-text-field>
 
             <v-text-field
               v-model="user.email"
-              label="Email"
+              label="Email*"
               :hint="emailInValid && 'Please enter valid email'"
               @input="onEmailChange"
               required
@@ -205,8 +207,9 @@ function onEmailChange() {
 
             <v-text-field
               v-model="user.password"
-              label="Password"
+              label="Password*"
               required
+              type="password"
             ></v-text-field>
           </v-card-text>
           <v-card-actions>
