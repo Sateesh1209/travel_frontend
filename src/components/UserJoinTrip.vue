@@ -73,7 +73,7 @@ async function userJoinTrip() {
     payload
   )
     .then((response) => {
-      props.showSnackbar("green", response.data.msg);
+      props.showSnackbar("green", response.data.message);
       if (response.data.status == "success") {
         setTimeout(() => {
           router.push({ name: "joinedplans" });
@@ -97,7 +97,7 @@ async function userUpdateTripTravellers() {
     payload
   )
     .then((response) => {
-      props.showSnackbar("green", response.data.msg);
+      props.showSnackbar("green", response.data.message);
       if (response.data.status == "success") {
         props.getTripTravellers();
         props.closeJoinTrip();
@@ -157,11 +157,12 @@ const onTravellersCountChange = (e) => {
       <v-card-text>
         <v-text-field
           v-model="tripUserInputs.emergencyContact"
-          label="Emergency Contact Number"
+          label="Emergency Contact Number*"
+          aria-required="true"
         ></v-text-field>
         <v-text-field
           v-model.number="tripUserInputs.totalTravellers"
-          label="Number of Travellers"
+          label="Number of Travellers*"
           type="number"
           @update:model-value="onTravellersCountChange"
           :min="1"
@@ -220,6 +221,10 @@ const onTravellersCountChange = (e) => {
           color="primary"
           @click="
             props.tripStatus ? userUpdateTripTravellers() : joinTripClick()
+          "
+          :disabled="
+            !tripUserInputs?.emergencyContact ||
+            !tripUserInputs?.totalTravellers
           "
           >{{ props.tripStatus ? "Update" : "Confirm & Join" }}</v-btn
         >
